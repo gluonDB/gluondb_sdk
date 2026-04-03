@@ -1,0 +1,23 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+typescript/node_modules/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+test/.venv/
+
+# Build artifacts
+python/dist/
+python/build/
+python/*.egg-info/
+*.whl
+*.tar.gz

@@ -1,0 +1,1 @@
+{"version":3,"file":"projects.js","sourceRoot":"","sources":["../../src/resources/projects.ts"],"names":[],"mappings":"AAGA,MAAM,OAAO,gBAAgB;IACP;IAApB,YAAoB,MAAmB;QAAnB,WAAM,GAAN,MAAM,CAAa;IAAG,CAAC;IAE3C,KAAK,CAAC,IAAI;QACR,OAAO,IAAI,CAAC,MAAM,CAAC,OAAO,CAAyB,WAAW,CAAC,CAAC;IAClE,CAAC;CACF"}

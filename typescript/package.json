@@ -1,0 +1,39 @@
+{
+  "name": "@gluondb/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript/JavaScript SDK for the GluonDB public API",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["gluondb", "sql", "database", "api", "sdk"],
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://gluondb.com",
+  "bugs": {
+    "url": "https://github.com/gluonDB/gluondb_sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gluonDB/gluondb_sdk.git",
+    "directory": "typescript"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
