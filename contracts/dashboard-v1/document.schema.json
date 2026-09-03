@@ -1,0 +1,1083 @@
+{
+	"$id": "https://schemas.gluondb.com/dashboard/document-v1.schema.json",
+	"title": "DashboardDocumentV1",
+	"description": "GluonDB dashboard document, schema version 1.",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"schema_version": {
+			"type": "number",
+			"const": 1
+		},
+		"theme": {
+			"type": "string",
+			"enum": [
+				"light",
+				"dark",
+				"system"
+			]
+		},
+		"parameters": {
+			"type": "object",
+			"propertyNames": {
+				"$ref": "#/$defs/ParameterName"
+			},
+			"additionalProperties": {
+				"$ref": "#/$defs/DashboardParameterDeclaration"
+			}
+		},
+		"layout": {
+			"$ref": "#/$defs/DashboardLayout"
+		},
+		"blocks": {
+			"type": "array",
+			"items": {
+				"$ref": "#/$defs/DashboardBlock"
+			}
+		}
+	},
+	"required": [
+		"schema_version",
+		"theme",
+		"parameters",
+		"layout",
+		"blocks"
+	],
+	"additionalProperties": false,
+	"$defs": {
+		"ParameterName": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 64,
+			"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+			"id": "ParameterName"
+		},
+		"DashboardParameterDeclaration": {
+			"oneOf": [
+				{
+					"$ref": "#/$defs/BooleanParameter"
+				},
+				{
+					"$ref": "#/$defs/IntegerParameter"
+				},
+				{
+					"$ref": "#/$defs/NumberParameter"
+				},
+				{
+					"$ref": "#/$defs/DateParameter"
+				},
+				{
+					"$ref": "#/$defs/TimestampParameter"
+				},
+				{
+					"$ref": "#/$defs/EnumParameter"
+				},
+				{
+					"$ref": "#/$defs/UuidParameter"
+				},
+				{
+					"$ref": "#/$defs/OperationValuesParameter"
+				},
+				{
+					"$ref": "#/$defs/ArrayParameter"
+				}
+			],
+			"id": "DashboardParameterDeclaration"
+		},
+		"BooleanParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "boolean"
+				},
+				"default": {
+					"type": "boolean"
+				}
+			},
+			"required": [
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "BooleanParameter"
+		},
+		"IntegerParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "integer"
+				},
+				"minimum": {
+					"type": "integer",
+					"minimum": -9007199254740991,
+					"maximum": 9007199254740991
+				},
+				"maximum": {
+					"type": "integer",
+					"minimum": -9007199254740991,
+					"maximum": 9007199254740991
+				},
+				"default": {
+					"type": "integer",
+					"minimum": -9007199254740991,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": [
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "IntegerParameter"
+		},
+		"NumberParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "number"
+				},
+				"minimum": {
+					"type": "number"
+				},
+				"maximum": {
+					"type": "number"
+				},
+				"default": {
+					"type": "number"
+				}
+			},
+			"required": [
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "NumberParameter"
+		},
+		"DateParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "date"
+				},
+				"default": {
+					"$ref": "#/$defs/DashboardDateValue"
+				}
+			},
+			"required": [
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "DateParameter"
+		},
+		"DashboardDateValue": {
+			"type": "string",
+			"format": "date",
+			"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+			"id": "DashboardDateValue"
+		},
+		"TimestampParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "timestamp"
+				},
+				"default": {
+					"$ref": "#/$defs/DashboardTimestampValue"
+				}
+			},
+			"required": [
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "TimestampParameter"
+		},
+		"DashboardTimestampValue": {
+			"type": "string",
+			"allOf": [
+				{
+					"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+				},
+				{
+					"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|\\+(?:(?:0\\d|1[0-3]):[0-5]\\d|14:00)|-(?:0\\d|1[0-3]):[0-5]\\d)$"
+				}
+			],
+			"id": "DashboardTimestampValue"
+		},
+		"EnumParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "enum"
+				},
+				"values": {
+					"minItems": 1,
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/DashboardEnumValue"
+					}
+				},
+				"default": {
+					"$ref": "#/$defs/DashboardEnumValue"
+				}
+			},
+			"required": [
+				"type",
+				"values"
+			],
+			"additionalProperties": false,
+			"id": "EnumParameter"
+		},
+		"DashboardEnumValue": {
+			"type": "string",
+			"maxLength": 512,
+			"pattern": "^[^\\x00]*$",
+			"id": "DashboardEnumValue"
+		},
+		"UuidParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "uuid"
+				},
+				"default": {
+					"type": "string",
+					"format": "uuid",
+					"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+				}
+			},
+			"required": [
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "UuidParameter"
+		},
+		"OperationValuesParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "operation_values"
+				},
+				"options_operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"mapping": {
+					"$ref": "#/$defs/OperationValuesMapping"
+				}
+			},
+			"required": [
+				"type",
+				"options_operation",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "OperationValuesParameter",
+			"description": "A string parameter whose legal values come from a bounded options operation."
+		},
+		"OperationKey": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 128,
+			"pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+			"id": "OperationKey"
+		},
+		"OperationValuesMapping": {
+			"type": "object",
+			"properties": {
+				"value": {
+					"$ref": "#/$defs/FieldName"
+				},
+				"label_fields": {
+					"minItems": 1,
+					"maxItems": 4,
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/FieldName"
+					}
+				},
+				"separator": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 16,
+					"pattern": "^[^\\x00-\\x1f\\x7f]+$"
+				}
+			},
+			"required": [
+				"value",
+				"label_fields"
+			],
+			"additionalProperties": false,
+			"id": "OperationValuesMapping",
+			"description": "`value` selects the accepted string; `label_fields` are joined in order with `separator`, defaulting to \" · \"."
+		},
+		"FieldName": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 256,
+			"pattern": "^[^\\s\\x00-\\x1f\\x7f](?:[^\\x00-\\x1f\\x7f]*[^\\s\\x00-\\x1f\\x7f])?$",
+			"id": "FieldName"
+		},
+		"ArrayParameter": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "array"
+				},
+				"items": {
+					"$ref": "#/$defs/ArrayParameterItem"
+				},
+				"min_items": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"max_items": {
+					"type": "integer",
+					"exclusiveMinimum": 0,
+					"maximum": 1000
+				},
+				"default": {
+					"type": "array",
+					"items": {
+						"anyOf": [
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "string"
+							}
+						]
+					}
+				}
+			},
+			"required": [
+				"type",
+				"items",
+				"max_items"
+			],
+			"additionalProperties": false,
+			"id": "ArrayParameter"
+		},
+		"ArrayParameterItem": {
+			"oneOf": [
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "boolean"
+						}
+					},
+					"required": [
+						"type"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "integer"
+						},
+						"minimum": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						},
+						"maximum": {
+							"type": "integer",
+							"minimum": -9007199254740991,
+							"maximum": 9007199254740991
+						}
+					},
+					"required": [
+						"type"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "number"
+						},
+						"minimum": {
+							"type": "number"
+						},
+						"maximum": {
+							"type": "number"
+						}
+					},
+					"required": [
+						"type"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "date"
+						}
+					},
+					"required": [
+						"type"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "timestamp"
+						}
+					},
+					"required": [
+						"type"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "enum"
+						},
+						"values": {
+							"minItems": 1,
+							"type": "array",
+							"items": {
+								"$ref": "#/$defs/DashboardEnumValue"
+							}
+						}
+					},
+					"required": [
+						"type",
+						"values"
+					],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string",
+							"const": "uuid"
+						}
+					},
+					"required": [
+						"type"
+					],
+					"additionalProperties": false
+				}
+			],
+			"id": "ArrayParameterItem"
+		},
+		"DashboardLayout": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"const": "grid"
+				},
+				"columns": {
+					"type": "number",
+					"const": 12
+				},
+				"gap": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 64
+				}
+			},
+			"required": [
+				"type",
+				"columns",
+				"gap"
+			],
+			"additionalProperties": false,
+			"id": "DashboardLayout"
+		},
+		"DashboardBlock": {
+			"oneOf": [
+				{
+					"$ref": "#/$defs/MetricBlock"
+				},
+				{
+					"$ref": "#/$defs/TableBlock"
+				},
+				{
+					"$ref": "#/$defs/LineChartBlock"
+				},
+				{
+					"$ref": "#/$defs/BarChartBlock"
+				},
+				{
+					"$ref": "#/$defs/AreaChartBlock"
+				},
+				{
+					"$ref": "#/$defs/PieChartBlock"
+				},
+				{
+					"$ref": "#/$defs/JsonViewerBlock"
+				},
+				{
+					"$ref": "#/$defs/TextBlock"
+				},
+				{
+					"$ref": "#/$defs/DividerBlock"
+				},
+				{
+					"$ref": "#/$defs/SpacerBlock"
+				},
+				{
+					"$ref": "#/$defs/FilterControlBlock"
+				}
+			],
+			"id": "DashboardBlock"
+		},
+		"MetricBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "metric"
+				},
+				"mapping": {
+					"$ref": "#/$defs/MetricMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "MetricBlock"
+		},
+		"BlockId": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 128,
+			"pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+			"id": "BlockId"
+		},
+		"BlockPosition": {
+			"type": "object",
+			"properties": {
+				"x": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"y": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 9007199254740991
+				},
+				"w": {
+					"type": "integer",
+					"exclusiveMinimum": 0,
+					"maximum": 9007199254740991
+				},
+				"h": {
+					"type": "integer",
+					"exclusiveMinimum": 0,
+					"maximum": 9007199254740991
+				}
+			},
+			"required": [
+				"x",
+				"y",
+				"w",
+				"h"
+			],
+			"additionalProperties": false,
+			"id": "BlockPosition"
+		},
+		"DisplayText": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 256,
+			"pattern": "^[^\\s\\x00-\\x1f\\x7f](?:[^\\x00-\\x1f\\x7f]*[^\\s\\x00-\\x1f\\x7f])?$",
+			"id": "DisplayText"
+		},
+		"MetricMapping": {
+			"type": "object",
+			"properties": {
+				"value": {
+					"$ref": "#/$defs/FieldName"
+				},
+				"label": {
+					"$ref": "#/$defs/FieldName"
+				},
+				"trend": {
+					"$ref": "#/$defs/FieldName"
+				}
+			},
+			"required": [
+				"value"
+			],
+			"additionalProperties": false,
+			"id": "MetricMapping"
+		},
+		"TableBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "table"
+				},
+				"mapping": {
+					"$ref": "#/$defs/TableMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "TableBlock"
+		},
+		"TableMapping": {
+			"type": "object",
+			"properties": {
+				"columns": {
+					"minItems": 1,
+					"maxItems": 100,
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/TableColumnMapping"
+					}
+				}
+			},
+			"required": [
+				"columns"
+			],
+			"additionalProperties": false,
+			"id": "TableMapping"
+		},
+		"TableColumnMapping": {
+			"type": "object",
+			"properties": {
+				"field": {
+					"$ref": "#/$defs/FieldName"
+				},
+				"label": {
+					"$ref": "#/$defs/DisplayText"
+				}
+			},
+			"required": [
+				"field"
+			],
+			"additionalProperties": false,
+			"id": "TableColumnMapping"
+		},
+		"LineChartBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "line_chart"
+				},
+				"mapping": {
+					"$ref": "#/$defs/CartesianMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "LineChartBlock"
+		},
+		"CartesianMapping": {
+			"type": "object",
+			"properties": {
+				"x": {
+					"$ref": "#/$defs/FieldName"
+				},
+				"y": {
+					"minItems": 1,
+					"maxItems": 20,
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/FieldName"
+					}
+				},
+				"series": {
+					"$ref": "#/$defs/FieldName"
+				}
+			},
+			"required": [
+				"x",
+				"y"
+			],
+			"additionalProperties": false,
+			"id": "CartesianMapping"
+		},
+		"BarChartBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "bar_chart"
+				},
+				"mapping": {
+					"$ref": "#/$defs/CartesianMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "BarChartBlock"
+		},
+		"AreaChartBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "area_chart"
+				},
+				"mapping": {
+					"$ref": "#/$defs/CartesianMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "AreaChartBlock"
+		},
+		"PieChartBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "pie_chart"
+				},
+				"variant": {
+					"type": "string",
+					"enum": [
+						"pie",
+						"donut"
+					]
+				},
+				"mapping": {
+					"$ref": "#/$defs/PieMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"variant",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "PieChartBlock"
+		},
+		"PieMapping": {
+			"type": "object",
+			"properties": {
+				"label": {
+					"$ref": "#/$defs/FieldName"
+				},
+				"value": {
+					"$ref": "#/$defs/FieldName"
+				}
+			},
+			"required": [
+				"label",
+				"value"
+			],
+			"additionalProperties": false,
+			"id": "PieMapping"
+		},
+		"JsonViewerBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"operation": {
+					"$ref": "#/$defs/OperationKey"
+				},
+				"type": {
+					"type": "string",
+					"const": "json_viewer"
+				},
+				"mapping": {
+					"$ref": "#/$defs/JsonViewerMapping"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"operation",
+				"type",
+				"mapping"
+			],
+			"additionalProperties": false,
+			"id": "JsonViewerBlock"
+		},
+		"JsonViewerMapping": {
+			"type": "object",
+			"properties": {
+				"field": {
+					"$ref": "#/$defs/FieldName"
+				}
+			},
+			"additionalProperties": false,
+			"id": "JsonViewerMapping",
+			"description": "Selects an optional field from the first result row; omission displays the whole row."
+		},
+		"TextBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"type": {
+					"type": "string",
+					"const": "text"
+				},
+				"format": {
+					"type": "string",
+					"enum": [
+						"plain",
+						"markdown"
+					]
+				},
+				"content": {
+					"type": "string",
+					"maxLength": 100000
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"type",
+				"format",
+				"content"
+			],
+			"additionalProperties": false,
+			"id": "TextBlock"
+		},
+		"DividerBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"type": {
+					"type": "string",
+					"const": "divider"
+				},
+				"style": {
+					"type": "string",
+					"enum": [
+						"solid",
+						"dashed",
+						"dotted"
+					]
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "DividerBlock"
+		},
+		"SpacerBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"type": {
+					"type": "string",
+					"const": "spacer"
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"type"
+			],
+			"additionalProperties": false,
+			"id": "SpacerBlock"
+		},
+		"FilterControlBlock": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"$ref": "#/$defs/BlockId"
+				},
+				"position": {
+					"$ref": "#/$defs/BlockPosition"
+				},
+				"title": {
+					"$ref": "#/$defs/DisplayText"
+				},
+				"type": {
+					"type": "string",
+					"const": "filter_control"
+				},
+				"parameter": {
+					"$ref": "#/$defs/ParameterName"
+				},
+				"control": {
+					"type": "string",
+					"enum": [
+						"auto",
+						"select",
+						"multi_select",
+						"date",
+						"date_range",
+						"toggle",
+						"number"
+					]
+				}
+			},
+			"required": [
+				"id",
+				"position",
+				"type",
+				"parameter",
+				"control"
+			],
+			"additionalProperties": false,
+			"id": "FilterControlBlock"
+		}
+	}
+}

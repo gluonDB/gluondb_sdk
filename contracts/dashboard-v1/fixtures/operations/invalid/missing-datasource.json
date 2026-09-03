@@ -1,0 +1,5 @@
+{
+	"key": "missing_datasource",
+	"sql": "SELECT 1",
+	"parameters": {}
+}

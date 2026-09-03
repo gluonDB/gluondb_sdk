@@ -11,12 +11,26 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "npm run check:dashboard && tsc && npm run check:type-tests",
+    "generate:dashboard": "node scripts/generate-dashboard-types.mjs",
+    "check:dashboard": "node ../scripts/check-dashboard-contract.mjs && node scripts/generate-dashboard-types.mjs --check",
+    "check:type-tests": "tsc -p tsconfig.type-tests.json",
+    "test": "npm run build && node --test test/*.test.mjs",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["gluondb", "sql", "database", "api", "sdk"],
+  "keywords": [
+    "gluondb",
+    "sql",
+    "database",
+    "api",
+    "sdk"
+  ],
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
@@ -34,6 +48,7 @@
     "directory": "typescript"
   },
   "devDependencies": {
+    "json-schema-to-typescript": "^15.0.4",
     "typescript": "^5"
   }
 }

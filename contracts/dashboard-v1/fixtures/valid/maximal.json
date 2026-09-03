@@ -1,0 +1,134 @@
+{
+	"schema_version": 1,
+	"theme": "dark",
+	"parameters": {
+		"include_trials": { "type": "boolean", "default": false },
+		"minimum_orders": { "type": "integer", "minimum": 0, "default": 1 },
+		"minimum_revenue": { "type": "number", "minimum": 0, "default": 0.01 },
+		"report_date": { "type": "date", "default": "2026-08-27" },
+		"as_of": { "type": "timestamp", "default": "2026-08-27T12:00:00Z" },
+		"period": {
+			"type": "enum",
+			"values": ["7d", "30d", "90d"],
+			"default": "30d"
+		},
+		"account_id": {
+			"type": "uuid",
+			"default": "67a29b2c-2fda-4bb0-8a4a-fcbc80b4272d"
+		},
+		"selected_record": {
+			"type": "operation_values",
+			"options_operation": "record_options",
+			"mapping": {
+				"value": "record_key",
+				"label_fields": ["record_name"]
+			}
+		},
+		"regions": {
+			"type": "array",
+			"items": {
+				"type": "enum",
+				"values": ["americas", "emea", "apac"]
+			},
+			"min_items": 1,
+			"max_items": 3,
+			"default": ["americas"]
+		}
+	},
+	"layout": {
+		"type": "grid",
+		"columns": 12,
+		"gap": 12
+	},
+	"blocks": [
+		{
+			"id": "metric",
+			"type": "metric",
+			"operation": "metric_data",
+			"position": { "x": 0, "y": 0, "w": 3, "h": 2 },
+			"title": "Metric",
+			"mapping": { "value": "value", "label": "label", "trend": "trend" }
+		},
+		{
+			"id": "table",
+			"type": "table",
+			"operation": "table_data",
+			"position": { "x": 3, "y": 0, "w": 5, "h": 4 },
+			"title": "Table",
+			"mapping": {
+				"columns": [
+					{ "field": "name", "label": "Name" },
+					{ "field": "value", "label": "Value" }
+				]
+			}
+		},
+		{
+			"id": "line",
+			"type": "line_chart",
+			"operation": "line_data",
+			"position": { "x": 0, "y": 4, "w": 4, "h": 4 },
+			"title": "Line",
+			"mapping": { "x": "date", "y": ["revenue", "cost"], "series": "region" }
+		},
+		{
+			"id": "bar",
+			"type": "bar_chart",
+			"operation": "bar_data",
+			"position": { "x": 4, "y": 4, "w": 4, "h": 4 },
+			"title": "Bar",
+			"mapping": { "x": "category", "y": ["value"] }
+		},
+		{
+			"id": "area",
+			"type": "area_chart",
+			"operation": "area_data",
+			"position": { "x": 8, "y": 4, "w": 4, "h": 4 },
+			"title": "Area",
+			"mapping": { "x": "date", "y": ["value"] }
+		},
+		{
+			"id": "pie",
+			"type": "pie_chart",
+			"variant": "donut",
+			"operation": "pie_data",
+			"position": { "x": 8, "y": 0, "w": 4, "h": 4 },
+			"title": "Donut",
+			"mapping": { "label": "category", "value": "value" }
+		},
+		{
+			"id": "json",
+			"type": "json_viewer",
+			"operation": "json_data",
+			"position": { "x": 8, "y": 8, "w": 4, "h": 3 },
+			"title": "JSON",
+			"mapping": {}
+		},
+		{
+			"id": "text",
+			"type": "text",
+			"position": { "x": 0, "y": 8, "w": 5, "h": 2 },
+			"title": "Markdown",
+			"format": "markdown",
+			"content": "## Dashboard notes\n\nStatic presentation contains no executable content."
+		},
+		{
+			"id": "divider",
+			"type": "divider",
+			"position": { "x": 0, "y": 10, "w": 12, "h": 1 },
+			"style": "dashed"
+		},
+		{
+			"id": "spacer",
+			"type": "spacer",
+			"position": { "x": 0, "y": 11, "w": 12, "h": 1 }
+		},
+		{
+			"id": "filter",
+			"type": "filter_control",
+			"position": { "x": 5, "y": 8, "w": 3, "h": 2 },
+			"title": "Period",
+			"parameter": "period",
+			"control": "select"
+		}
+	]
+}

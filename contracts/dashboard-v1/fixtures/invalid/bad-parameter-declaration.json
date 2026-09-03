@@ -1,0 +1,12 @@
+{
+	"schema_version": 1,
+	"theme": "system",
+	"parameters": {
+		"regions": {
+			"type": "array",
+			"items": { "type": "enum", "values": ["americas", "emea"] }
+		}
+	},
+	"layout": { "type": "grid", "columns": 12, "gap": 16 },
+	"blocks": []
+}

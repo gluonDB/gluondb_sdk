@@ -7,10 +7,35 @@ from typing import Optional, Union, overload
 from .bound import AsyncBoundDatasource, BoundDatasource
 from .client import (
     AsyncGluonClient,
+    DashboardConflictError,
     GluonAPIError,
     GluonClient,
+    RevisionChangedError,
+)
+from .generated import (
+    DashboardBlock,
+    DashboardDocumentV1,
+    DashboardOperationDeclaration,
+    DashboardOperationPutBody,
+    DashboardParameterDeclaration,
+    OperationResultSchema,
 )
 from .resources.datasources import AsyncDatasourcesResource, DatasourcesResource
+from .resources.dashboards import (
+    AsyncDashboardBlocks,
+    AsyncDashboardDraft,
+    AsyncDashboardOperations,
+    AsyncDashboardsResource,
+    DashboardBlocks,
+    DashboardDraft,
+    DashboardOperation,
+    DashboardOperations,
+    DashboardPermission,
+    DashboardPreviewResult,
+    DashboardPublishResult,
+    DashboardSummary,
+    DashboardsResource,
+)
 from .resources.projects import AsyncProjectsResource, ProjectsResource
 from .types import Column, Datasource, Project, QueryResult
 
@@ -20,10 +45,31 @@ __all__ = [
     "BoundDatasource",
     "AsyncBoundDatasource",
     "GluonAPIError",
+    "DashboardConflictError",
+    "RevisionChangedError",
     "QueryResult",
     "Column",
     "Project",
     "Datasource",
+    "DashboardBlock",
+    "DashboardDocumentV1",
+    "DashboardOperationDeclaration",
+    "DashboardOperationPutBody",
+    "DashboardParameterDeclaration",
+    "OperationResultSchema",
+    "DashboardSummary",
+    "DashboardOperation",
+    "DashboardPermission",
+    "DashboardPreviewResult",
+    "DashboardPublishResult",
+    "DashboardDraft",
+    "AsyncDashboardDraft",
+    "DashboardOperations",
+    "AsyncDashboardOperations",
+    "DashboardBlocks",
+    "AsyncDashboardBlocks",
+    "DashboardsResource",
+    "AsyncDashboardsResource",
 ]
 
 DEFAULT_BASE_URL = "https://api.gluondb.com"
@@ -55,6 +101,7 @@ class GluonDB:
         )
         self.projects = ProjectsResource(self._client)
         self.datasources = DatasourcesResource(self._client)
+        self.dashboards = DashboardsResource(self._client)
 
     @overload
     def datasource(self, id: str) -> BoundDatasource: ...
@@ -103,6 +150,7 @@ class AsyncGluonDB:
         )
         self.projects = AsyncProjectsResource(self._client)
         self.datasources = AsyncDatasourcesResource(self._client)
+        self.dashboards = AsyncDashboardsResource(self._client)
 
     @overload
     def datasource(self, id: str) -> AsyncBoundDatasource: ...

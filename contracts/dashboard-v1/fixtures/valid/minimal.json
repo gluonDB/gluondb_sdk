@@ -1,0 +1,20 @@
+{
+	"schema_version": 1,
+	"theme": "system",
+	"parameters": {},
+	"layout": {
+		"type": "grid",
+		"columns": 12,
+		"gap": 16
+	},
+	"blocks": [
+		{
+			"id": "total-revenue",
+			"type": "metric",
+			"operation": "total_revenue",
+			"position": { "x": 0, "y": 0, "w": 4, "h": 2 },
+			"title": "Total revenue",
+			"mapping": { "value": "revenue" }
+		}
+	]
+}

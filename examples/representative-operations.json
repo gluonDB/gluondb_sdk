@@ -1,0 +1,55 @@
+[
+  {
+    "key": "total_revenue",
+    "sql": "SELECT 1 AS revenue, 0 AS growth_percent",
+    "parameters": {},
+    "result_schema": {
+      "columns": [
+        { "name": "revenue", "type": "integer" },
+        { "name": "growth_percent", "type": "integer" }
+      ]
+    }
+  },
+  {
+    "key": "active_customers",
+    "sql": "SELECT 1 AS customers",
+    "parameters": {},
+    "result_schema": {
+      "columns": [{ "name": "customers", "type": "integer" }]
+    }
+  },
+  {
+    "key": "revenue_by_day",
+    "sql": "SELECT CURRENT_DATE AS day, 1 AS revenue, 'americas' AS region",
+    "parameters": {},
+    "result_schema": {
+      "columns": [
+        { "name": "day", "type": "date" },
+        { "name": "revenue", "type": "integer" },
+        { "name": "region", "type": "text" }
+      ]
+    }
+  },
+  {
+    "key": "revenue_by_region",
+    "sql": "SELECT 'americas' AS region, 1 AS revenue",
+    "parameters": {},
+    "result_schema": {
+      "columns": [
+        { "name": "region", "type": "text" },
+        { "name": "revenue", "type": "integer" }
+      ]
+    }
+  },
+  {
+    "key": "top_customers",
+    "sql": "SELECT 'Example' AS customer, 1 AS revenue",
+    "parameters": {},
+    "result_schema": {
+      "columns": [
+        { "name": "customer", "type": "text" },
+        { "name": "revenue", "type": "integer" }
+      ]
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+	"key": "placeholder_mismatch",
+	"datasource_id": "67a29b2c-2fda-4bb0-8a4a-fcbc80b4272d",
+	"sql": "SELECT * FROM analytics.orders WHERE created_at >= {{ start_date }} AND region = {{region}}",
+	"parameters": {
+		"start_date": { "type": "date" },
+		"unused_region": { "type": "enum", "values": ["north", "south"] }
+	}
+}

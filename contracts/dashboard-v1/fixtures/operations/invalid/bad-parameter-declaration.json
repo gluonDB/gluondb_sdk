@@ -1,0 +1,8 @@
+{
+	"key": "unsafe_parameter",
+	"datasource_id": "67a29b2c-2fda-4bb0-8a4a-fcbc80b4272d",
+	"sql": "SELECT {{fragment}}",
+	"parameters": {
+		"fragment": { "type": "sql" }
+	}
+}

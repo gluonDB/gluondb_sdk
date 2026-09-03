@@ -1,0 +1,15 @@
+{
+	"schema_version": 1,
+	"theme": "system",
+	"parameters": {},
+	"layout": { "type": "grid", "columns": 12, "gap": 16 },
+	"blocks": [
+		{
+			"id": "metric",
+			"type": "metric",
+			"operation": "missing_operation",
+			"position": { "x": 0, "y": 0, "w": 4, "h": 2 },
+			"mapping": { "value": "value" }
+		}
+	]
+}
