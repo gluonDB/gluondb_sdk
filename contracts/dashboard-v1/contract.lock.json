@@ -1,0 +1,7 @@
+{
+  "source_repository": "gluonDB/gluondb_front",
+  "source_revision": "5e05307bb90cb07f71a250cf17c1429d41d8f28a",
+  "document_schema_sha256": "74f7f7877e2482e30f4f2c0ca5197266dfd505ad3186dc875a7a5cd65a7ecc30",
+  "operation_schema_sha256": "eaea7ec4de55359f4a8e5ce9608aeaa523c2b733b07d084adc216e8c3aadbb5f",
+  "fixtures_sha256": "6c92d210b0badd5139d55e8b459317c1b4b814004ce5f78dd2e2220ef23701ed"
+}

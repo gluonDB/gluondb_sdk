@@ -74,6 +74,9 @@ Both SDKs provide the same capabilities:
 - **`datasource(id)`** -- Bind to a datasource by ID (or by project + name), then call `.query(sql)` on the returned handle
 - **`projects.list()`** -- List your projects
 - **`datasources.list(projectId)`** -- List datasources in a project
+- **`dashboards.create(...)` / `dashboards.getDraft(...)`** -- Incrementally
+  author typed Dashboard v2 documents and operations, preview, publish, and
+  share them using optimistic concurrency
 
 The SQL dialect depends on the connected database (Postgres, MySQL, MSSQL, etc.). Write queries using the syntax of the target database.
 
@@ -86,6 +89,11 @@ The SQL dialect depends on the connected database (Postgres, MySQL, MSSQL, etc.)
 | `apiVersion` | `v1` | API version |
 
 For smoke tests against a non-production environment, override `baseUrl` with `GLUONDB_BASE_URL`.
+
+Dashboard authoring examples are in `examples/dashboard-typescript.mjs` and
+`examples/dashboard-python.py`. They require an explicit base URL, API key,
+project ID, and datasource ID so they cannot accidentally publish to the wrong
+environment.
 
 ## License
 

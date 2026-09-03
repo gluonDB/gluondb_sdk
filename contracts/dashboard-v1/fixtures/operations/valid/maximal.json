@@ -1,0 +1,42 @@
+{
+	"key": "all_parameter_types",
+	"datasource_id": "67a29b2c-2fda-4bb0-8a4a-fcbc80b4272d",
+	"sql": "SELECT {{flag}} AS flag, {{count}} AS count, {{ratio}} AS ratio, {{day}} AS day, {{moment}} AS moment, {{choice}} AS choice, {{entity}} AS entity, {{account}} AS account, {{values}} AS values",
+	"parameters": {
+		"flag": { "type": "boolean", "default": true },
+		"count": { "type": "integer", "minimum": 0, "maximum": 10, "default": 2 },
+		"ratio": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.5 },
+		"day": { "type": "date", "default": "2026-08-28" },
+		"moment": { "type": "timestamp", "default": "2026-08-28T12:00:00-06:00" },
+		"choice": { "type": "enum", "values": ["a", "b"], "default": "a" },
+		"entity": {
+			"type": "uuid",
+			"default": "db02a2ab-8f24-44bd-8e45-3f6eb0ee2f88"
+		},
+		"account": {
+			"type": "operation_values",
+			"options_operation": "account_options",
+			"mapping": { "value": "account_id", "label_fields": ["email"] }
+		},
+		"values": {
+			"type": "array",
+			"items": { "type": "number", "minimum": 0 },
+			"min_items": 1,
+			"max_items": 1000,
+			"default": [1, 2]
+		}
+	},
+	"result_schema": {
+		"columns": [
+			{ "name": "flag", "type": "bool" },
+			{ "name": "count", "type": "int8" },
+			{ "name": "ratio", "type": "float8" },
+			{ "name": "day", "type": "date" },
+			{ "name": "moment", "type": "timestamp with time zone" },
+			{ "name": "choice", "type": "text" },
+			{ "name": "entity", "type": "uuid" },
+			{ "name": "account", "type": "text" },
+			{ "name": "values", "type": "numeric[]" }
+		]
+	}
+}

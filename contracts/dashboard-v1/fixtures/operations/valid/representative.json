@@ -1,0 +1,20 @@
+{
+	"key": "revenue_by_day",
+	"datasource_id": "67a29b2c-2fda-4bb0-8a4a-fcbc80b4272d",
+	"sql": "SELECT order_date AS day, SUM(total) AS revenue FROM analytics.orders WHERE order_date >= {{start_date}} AND region = ANY({{regions}}) GROUP BY order_date ORDER BY order_date",
+	"parameters": {
+		"start_date": { "type": "date" },
+		"regions": {
+			"type": "array",
+			"items": { "type": "enum", "values": ["north", "south", "east", "west"] },
+			"max_items": 4,
+			"default": ["north", "south"]
+		}
+	},
+	"result_schema": {
+		"columns": [
+			{ "name": "day", "type": "date" },
+			{ "name": "revenue", "type": "numeric" }
+		]
+	}
+}

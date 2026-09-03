@@ -1,0 +1,81 @@
+{
+	"schema_version": 1,
+	"theme": "system",
+	"parameters": {
+		"agent_id": {
+			"type": "operation_values",
+			"options_operation": "agent_emails",
+			"mapping": {
+				"value": "agent_id",
+				"label_fields": ["email", "agent_id"],
+				"separator": " · "
+			}
+		},
+		"session_key": {
+			"type": "operation_values",
+			"options_operation": "list_sessions",
+			"mapping": {
+				"value": "session_key",
+				"label_fields": ["started_at", "session_key"],
+				"separator": " · "
+			}
+		},
+		"from_seq": {
+			"type": "integer",
+			"minimum": 0,
+			"default": 0
+		},
+		"to_seq": {
+			"type": "integer",
+			"minimum": 0,
+			"default": 1000
+		}
+	},
+	"layout": {
+		"type": "grid",
+		"columns": 12,
+		"gap": 16
+	},
+	"blocks": [
+		{
+			"id": "agent-filter",
+			"type": "filter_control",
+			"position": { "x": 0, "y": 0, "w": 3, "h": 1 },
+			"title": "Agent",
+			"parameter": "agent_id",
+			"control": "select"
+		},
+		{
+			"id": "session-filter",
+			"type": "filter_control",
+			"position": { "x": 3, "y": 0, "w": 5, "h": 1 },
+			"title": "Session",
+			"parameter": "session_key",
+			"control": "select"
+		},
+		{
+			"id": "from-seq-filter",
+			"type": "filter_control",
+			"position": { "x": 8, "y": 0, "w": 2, "h": 1 },
+			"title": "From seq",
+			"parameter": "from_seq",
+			"control": "number"
+		},
+		{
+			"id": "to-seq-filter",
+			"type": "filter_control",
+			"position": { "x": 10, "y": 0, "w": 2, "h": 1 },
+			"title": "To seq",
+			"parameter": "to_seq",
+			"control": "number"
+		},
+		{
+			"id": "session-json",
+			"type": "json_viewer",
+			"operation": "get_session",
+			"position": { "x": 0, "y": 1, "w": 12, "h": 8 },
+			"title": "Session JSON",
+			"mapping": { "field": "session_json" }
+		}
+	]
+}

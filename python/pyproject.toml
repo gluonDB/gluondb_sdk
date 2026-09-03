@@ -26,10 +26,16 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.25",
+    "typing-extensions>=4.4",
 ]
 
 [project.optional-dependencies]
 pandas = ["pandas>=1.5"]
+dev = [
+    "datamodel-code-generator==0.76.1",
+    "mypy>=1.10",
+    "pytest>=8",
+]
 
 [project.urls]
 Homepage = "https://gluondb.com"

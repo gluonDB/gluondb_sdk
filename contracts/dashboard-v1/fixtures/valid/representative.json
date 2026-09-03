@@ -1,0 +1,92 @@
+{
+	"schema_version": 1,
+	"theme": "system",
+	"parameters": {
+		"period": {
+			"type": "enum",
+			"values": ["7d", "30d", "90d"],
+			"default": "30d"
+		},
+		"start_date": {
+			"type": "date",
+			"default": "2026-01-01"
+		},
+		"regions": {
+			"type": "array",
+			"items": {
+				"type": "enum",
+				"values": ["americas", "emea", "apac"]
+			},
+			"max_items": 3,
+			"default": ["americas", "emea"]
+		}
+	},
+	"layout": {
+		"type": "grid",
+		"columns": 12,
+		"gap": 16
+	},
+	"blocks": [
+		{
+			"id": "period-filter",
+			"type": "filter_control",
+			"position": { "x": 0, "y": 0, "w": 3, "h": 1 },
+			"title": "Period",
+			"parameter": "period",
+			"control": "select"
+		},
+		{
+			"id": "total-revenue",
+			"type": "metric",
+			"operation": "total_revenue",
+			"position": { "x": 0, "y": 1, "w": 3, "h": 2 },
+			"title": "Total revenue",
+			"mapping": { "value": "revenue", "trend": "growth_percent" }
+		},
+		{
+			"id": "active-customers",
+			"type": "metric",
+			"operation": "active_customers",
+			"position": { "x": 3, "y": 1, "w": 3, "h": 2 },
+			"title": "Active customers",
+			"mapping": { "value": "customers" }
+		},
+		{
+			"id": "revenue-trend",
+			"type": "line_chart",
+			"operation": "revenue_by_day",
+			"position": { "x": 0, "y": 3, "w": 8, "h": 5 },
+			"title": "Revenue trend",
+			"mapping": { "x": "day", "y": ["revenue"], "series": "region" }
+		},
+		{
+			"id": "revenue-by-region",
+			"type": "bar_chart",
+			"operation": "revenue_by_region",
+			"position": { "x": 8, "y": 3, "w": 4, "h": 5 },
+			"title": "Revenue by region",
+			"mapping": { "x": "region", "y": ["revenue"] }
+		},
+		{
+			"id": "top-customers",
+			"type": "table",
+			"operation": "top_customers",
+			"position": { "x": 0, "y": 8, "w": 8, "h": 5 },
+			"title": "Top customers",
+			"mapping": {
+				"columns": [
+					{ "field": "customer", "label": "Customer" },
+					{ "field": "revenue", "label": "Revenue" }
+				]
+			}
+		},
+		{
+			"id": "notes",
+			"type": "text",
+			"position": { "x": 8, "y": 8, "w": 4, "h": 3 },
+			"title": "Notes",
+			"format": "markdown",
+			"content": "Revenue is shown in the dashboard currency."
+		}
+	]
+}

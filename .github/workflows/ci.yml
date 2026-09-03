@@ -19,8 +19,25 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install build tooling
-        run: python -m pip install --upgrade pip build twine
+        run: python -m pip install --upgrade pip build twine -e "./python[dev]"
+
+      - name: Check contract snapshot
+        run: node scripts/check-dashboard-contract.mjs
+
+      - name: Check generated dashboard models
+        run: python python/scripts/generate_dashboard_types.py --check
+
+      - name: Typecheck Python package and examples
+        run: mypy python/gluondb python/tests examples/dashboard-python.py
+
+      - name: Run Python tests
+        run: pytest -q python/tests
 
       - name: Build Python package
         run: python -m build ./python
@@ -47,9 +64,12 @@ jobs:
         run: npm ci
         working-directory: typescript
 
-      - name: Build TypeScript package
-        run: npm run build
+      - name: Build and test TypeScript package
+        run: npm run test
         working-directory: typescript
+
+      - name: Check TypeScript staging example syntax
+        run: node --check examples/dashboard-typescript.mjs
 
       - name: Validate published npm tarball
         run: npm pack --dry-run

@@ -1,0 +1,57 @@
+[
+	{
+		"key": "agent_emails",
+		"datasource_id": "e42b37d0-d6f7-4db6-a84e-e98589070c4b",
+		"sql": "SELECT agent_id, email FROM app_users ORDER BY email",
+		"parameters": {},
+		"result_schema": {
+			"columns": [
+				{ "name": "agent_id", "type": "text" },
+				{ "name": "email", "type": "text" }
+			]
+		}
+	},
+	{
+		"key": "list_sessions",
+		"datasource_id": "5c96f1b5-4c06-4cb0-86cc-214522051b13",
+		"sql": "SELECT session_key, started_at FROM agent_sessions WHERE agent_id = {{agent_id}} ORDER BY started_at DESC",
+		"parameters": {
+			"agent_id": {
+				"type": "operation_values",
+				"options_operation": "agent_emails",
+				"mapping": {
+					"value": "agent_id",
+					"label_fields": ["email", "agent_id"],
+					"separator": " · "
+				}
+			}
+		},
+		"result_schema": {
+			"columns": [
+				{ "name": "session_key", "type": "text" },
+				{ "name": "started_at", "type": "timestamp with time zone" }
+			]
+		}
+	},
+	{
+		"key": "get_session",
+		"datasource_id": "5c96f1b5-4c06-4cb0-86cc-214522051b13",
+		"sql": "SELECT json_agg(event ORDER BY seq) AS session_json FROM agent_session_events WHERE session_key = {{session_key}} AND seq >= {{from_seq}} AND seq <= {{to_seq}}",
+		"parameters": {
+			"session_key": {
+				"type": "operation_values",
+				"options_operation": "list_sessions",
+				"mapping": {
+					"value": "session_key",
+					"label_fields": ["started_at", "session_key"],
+					"separator": " · "
+				}
+			},
+			"from_seq": { "type": "integer", "minimum": 0, "default": 0 },
+			"to_seq": { "type": "integer", "minimum": 0, "default": 1000 }
+		},
+		"result_schema": {
+			"columns": [{ "name": "session_json", "type": "jsonb" }]
+		}
+	}
+]
