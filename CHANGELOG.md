@@ -10,6 +10,8 @@ All notable changes to this project are documented in this file.
   GluonDB JSON Schema artifacts.
 - Typed draft-conflict and published-revision-changed errors.
 - Representative staging examples for building and publishing a dashboard.
+- `@gluondb/mcp`, a stdio-to-HTTP bridge that connects stdio-only MCP clients
+  to the GluonDB MCP endpoint, with its own CI job and `mcp-v*` release tags.
 
 ### Changed
 - HTTP clients now preserve structured error details, accept conditional
