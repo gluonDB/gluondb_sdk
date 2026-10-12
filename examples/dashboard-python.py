@@ -53,13 +53,14 @@ dashboard.patch_document(
 for block in document["blocks"]:
     dashboard.blocks.add(cast(DashboardBlock, block))
 
-published = dashboard.publish()
+# API keys author drafts only; a signed-in user publishes from the editor.
 print(
     json.dumps(
         {
             "dashboard_id": dashboard.id,
-            "published_revision": published.published_revision,
-            "next_draft_hash": dashboard.content_hash,
+            "draft_version": dashboard.draft_version,
+            "draft_hash": dashboard.content_hash,
+            "editor_url": dashboard.editor_url,
         },
         indent=2,
     )

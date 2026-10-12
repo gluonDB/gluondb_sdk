@@ -9,9 +9,18 @@ All notable changes to this project are documented in this file.
 - Generated dashboard document and operation models sourced from the canonical
   GluonDB JSON Schema artifacts.
 - Typed draft-conflict and published-revision-changed errors.
-- Representative staging examples for building and publishing a dashboard.
+- Representative staging examples for building a dashboard draft.
+- `dashboards.list()` and the draft's `editor_url` / `editorUrl`, where a
+  signed-in user reviews and publishes.
 
 ### Changed
+- Dashboard authoring is draft-only, matching the server: API keys cannot
+  publish, share, archive, restore or delete dashboards, so the draft handles
+  no longer expose `publish()` or `share()`.
+- Every draft mutation sends `If-Draft-Version` alongside `If-Match`; the
+  server answers 428 without it. `DashboardConflictError` now also reports
+  `current_draft_version` / `currentDraftVersion`.
+- Dashboard summaries accept fields added by newer servers instead of failing.
 - HTTP clients now preserve structured error details, accept conditional
   request headers, and support successful empty responses.
 

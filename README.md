@@ -74,9 +74,10 @@ Both SDKs provide the same capabilities:
 - **`datasource(id)`** -- Bind to a datasource by ID (or by project + name), then call `.query(sql)` on the returned handle
 - **`projects.list()`** -- List your projects
 - **`datasources.list(projectId)`** -- List datasources in a project
-- **`dashboards.create(...)` / `dashboards.getDraft(...)`** -- Incrementally
-  author typed Dashboard v2 documents and operations, preview, publish, and
-  share them using optimistic concurrency
+- **`dashboards.list(...)` / `dashboards.create(...)` / `dashboards.getDraft(...)`** --
+  Incrementally author typed Dashboard v2 draft documents and operations and
+  preview them, using optimistic concurrency. API keys author drafts only:
+  publishing and sharing happen in the GluonDB editor
 
 The SQL dialect depends on the connected database (Postgres, MySQL, MSSQL, etc.). Write queries using the syntax of the target database.
 
@@ -92,7 +93,7 @@ For smoke tests against a non-production environment, override `baseUrl` with `G
 
 Dashboard authoring examples are in `examples/dashboard-typescript.mjs` and
 `examples/dashboard-python.py`. They require an explicit base URL, API key,
-project ID, and datasource ID so they cannot accidentally publish to the wrong
+project ID, and datasource ID so they cannot accidentally write to the wrong
 environment.
 
 ## License

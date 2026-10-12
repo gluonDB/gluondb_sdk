@@ -9,18 +9,18 @@ export class DashboardOperations {
     async put(key, operation) {
         const response = await this.draft.request(`/draft/operations/${segment(key)}`, {
             method: "PUT",
-            headers: { "If-Match": this.draft.contentHash },
+            headers: this.draft.preconditions(),
             body: JSON.stringify(operation),
         });
-        this.draft.applyOperation(response.data.operation, response.data.content_hash);
+        this.draft.applyOperation(response.data.operation, response.data);
         return response.data.operation;
     }
     async remove(key) {
         const response = await this.draft.request(`/draft/operations/${segment(key)}`, {
             method: "DELETE",
-            headers: { "If-Match": this.draft.contentHash },
+            headers: this.draft.preconditions(),
         });
-        this.draft.removeOperation(response.data.removed, response.data.content_hash);
+        this.draft.removeOperation(response.data.removed, response.data);
     }
     async preview(key, parameters = {}) {
         return this.draft.request(`/draft/operations/${segment(key)}/run`, {
@@ -40,6 +40,10 @@ export class DashboardBlocks {
         ]);
     }
 }
+/**
+ * A dashboard draft. API keys author drafts only: publishing, sharing and
+ * lifecycle actions happen in the GluonDB editor at `editorUrl`.
+ */
 export class DashboardDraft {
     client;
     operations;
@@ -49,7 +53,9 @@ export class DashboardDraft {
     revisionIdValue;
     documentValue;
     contentHashValue;
+    draftVersionValue;
     operationValues;
+    editorUrlValue;
     constructor(client, data) {
         this.client = client;
         this.summaryValue = data.dashboard;
@@ -57,7 +63,9 @@ export class DashboardDraft {
         this.revisionIdValue = data.revision_id;
         this.documentValue = data.document;
         this.contentHashValue = data.content_hash;
+        this.draftVersionValue = data.draft_version;
         this.operationValues = data.operations;
+        this.editorUrlValue = data.editor_url;
         this.operations = new DashboardOperations(this);
         this.blocks = new DashboardBlocks(this);
     }
@@ -79,22 +87,37 @@ export class DashboardDraft {
     get contentHash() {
         return this.contentHashValue;
     }
+    /** Advances on every document or operation edit, including other writers'. */
+    get draftVersion() {
+        return this.draftVersionValue;
+    }
+    /** Where a signed-in user reviews and publishes this draft. */
+    get editorUrl() {
+        return this.editorUrlValue;
+    }
     get operationList() {
         return this.operationValues;
+    }
+    /** Both preconditions the server requires on every draft mutation. */
+    preconditions() {
+        return {
+            "If-Match": this.contentHashValue,
+            "If-Draft-Version": String(this.draftVersionValue),
+        };
     }
     request(suffix, init) {
         return this.client.request(`/dashboards/${segment(this.id)}${suffix}`, init);
     }
-    applyOperation(operation, contentHash) {
+    applyOperation(operation, state) {
         this.operationValues = [
             ...this.operationValues.filter((candidate) => candidate.key !== operation.key),
             operation,
         ];
-        this.contentHashValue = contentHash;
+        this.applyState(state);
     }
-    removeOperation(key, contentHash) {
+    removeOperation(key, state) {
         this.operationValues = this.operationValues.filter((operation) => operation.key !== key);
-        this.contentHashValue = contentHash;
+        this.applyState(state);
     }
     async refresh() {
         const response = await this.client.request(`/dashboards/${segment(this.id)}/draft`);
@@ -104,37 +127,18 @@ export class DashboardDraft {
     async patchDocument(patch) {
         const response = await this.request("/draft", {
             method: "PATCH",
-            headers: { "If-Match": this.contentHash },
+            headers: this.preconditions(),
             body: JSON.stringify({ patch }),
         });
         this.revisionValue = response.data.revision;
         this.revisionIdValue = response.data.revision_id;
         this.documentValue = response.data.document;
-        this.contentHashValue = response.data.content_hash;
+        this.applyState(response.data);
         return this;
     }
-    async publish() {
-        const response = await this.request("/publish", {
-            method: "POST",
-            headers: { "If-Match": this.contentHash },
-        });
-        this.revisionValue = response.data.next_draft_revision;
-        this.revisionIdValue = response.data.next_draft_revision_id;
-        this.contentHashValue = response.data.next_draft_hash;
-        this.summaryValue = {
-            ...this.summaryValue,
-            published_revision_id: response.data.published_revision_id,
-            draft_revision_id: response.data.next_draft_revision_id,
-        };
-        return response.data;
-    }
-    async share(email, role = "viewer") {
-        const response = await this.request("/permissions", {
-            method: "POST",
-            body: JSON.stringify({ email, role }),
-        });
-        this.contentHashValue = response.data.content_hash;
-        return response.data.permission;
+    applyState(state) {
+        this.contentHashValue = state.content_hash;
+        this.draftVersionValue = state.draft_version;
     }
     applySnapshot(data) {
         this.summaryValue = data.dashboard;
@@ -142,13 +146,21 @@ export class DashboardDraft {
         this.revisionIdValue = data.revision_id;
         this.documentValue = data.document;
         this.contentHashValue = data.content_hash;
+        this.draftVersionValue = data.draft_version;
         this.operationValues = data.operations;
+        this.editorUrlValue = data.editor_url;
     }
 }
 export class DashboardsResource {
     client;
     constructor(client) {
         this.client = client;
+    }
+    /** Dashboards in the projects this API key was granted, optionally one project. */
+    async list(projectId) {
+        const query = projectId ? `?project_id=${segment(projectId)}` : "";
+        const response = await this.client.request(`/dashboards${query}`);
+        return response.data.dashboards;
     }
     async create(input) {
         const response = await this.client.request("/dashboards", {

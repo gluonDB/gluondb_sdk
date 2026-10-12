@@ -38,8 +38,12 @@ const summary = {
   description: null,
   draft_revision_id: "revision-1",
   published_revision_id: null,
+  archived_at: null,
   created_at: "2026-09-02T00:00:00Z",
   updated_at: "2026-09-02T00:00:00Z",
+  can_edit: true,
+  can_manage: false,
+  allowed_actions: ["get_draft", "patch_document", "put_operation"],
 };
 
 function response(body, status = 200) {
@@ -49,21 +53,23 @@ function response(body, status = 200) {
   });
 }
 
-function draft(hash = "sha256:one") {
+function draft(hash = "sha256:one", draftVersion = 1) {
   return {
     data: {
       dashboard: summary,
+      editor_url: "https://app.test/dashboards/dashboard-1/edit",
       revision: 1,
       revision_id: "revision-1",
       document,
       content_hash: hash,
+      draft_version: draftVersion,
       operations: [],
     },
     meta: { api_version: "v1" },
   };
 }
 
-test("dashboard builder carries and advances the server draft hash", async (t) => {
+test("dashboard builder carries and advances the draft hash and version", async (t) => {
   const calls = [];
   const replies = [
     response(draft()),
@@ -71,6 +77,7 @@ test("dashboard builder carries and advances the server draft hash", async (t) =
       data: {
         dashboard_id: "dashboard-1",
         content_hash: "sha256:one",
+        draft_version: 2,
         operation: { ...operation, query_hash: "sha256:query" },
       },
       meta: { api_version: "v1" },
@@ -82,21 +89,16 @@ test("dashboard builder carries and advances the server draft hash", async (t) =
         revision_id: "revision-1",
         document: { ...document, theme: "dark" },
         content_hash: "sha256:two",
+        draft_version: 3,
       },
       meta: { api_version: "v1" },
     }),
     response({
       data: {
         dashboard_id: "dashboard-1",
-        published_revision: 1,
-        published_revision_id: "revision-1",
-        published_content_hash: "sha256:two",
-        published_at: "2026-09-02T01:00:00Z",
-        next_draft_revision: 2,
-        next_draft_revision_id: "revision-2",
-        next_draft_hash: "sha256:three",
-        reused_grant: false,
-        dry_run: { executed: [], skipped: [] },
+        content_hash: "sha256:two",
+        draft_version: 4,
+        removed: operation.key,
       },
       meta: { api_version: "v1" },
     }),
@@ -115,22 +117,90 @@ test("dashboard builder carries and advances the server draft hash", async (t) =
     name: "Revenue",
   });
   assert.equal(dashboard.contentHash, "sha256:one");
+  assert.equal(dashboard.draftVersion, 1);
+  assert.equal(dashboard.editorUrl, "https://app.test/dashboards/dashboard-1/edit");
 
   const { key, ...putBody } = operation;
   await dashboard.operations.put(key, putBody);
   assert.equal(calls[1].init.headers["If-Match"], "sha256:one");
+  assert.equal(calls[1].init.headers["If-Draft-Version"], "1");
   assert.equal(dashboard.operationList[0].key, key);
+  assert.equal(dashboard.draftVersion, 2);
 
   await dashboard.patchDocument([
     { op: "replace", path: "/theme", value: "dark" },
   ]);
   assert.equal(calls[2].init.headers["If-Match"], "sha256:one");
+  assert.equal(calls[2].init.headers["If-Draft-Version"], "2");
   assert.equal(dashboard.contentHash, "sha256:two");
+  assert.equal(dashboard.draftVersion, 3);
 
-  await dashboard.publish();
+  await dashboard.operations.remove(key);
+  assert.equal(calls[3].init.method, "DELETE");
   assert.equal(calls[3].init.headers["If-Match"], "sha256:two");
-  assert.equal(dashboard.contentHash, "sha256:three");
-  assert.equal(dashboard.revision, 2);
+  assert.equal(calls[3].init.headers["If-Draft-Version"], "3");
+  assert.equal(dashboard.operationList.length, 0);
+  assert.equal(dashboard.draftVersion, 4);
+});
+
+test("API keys author drafts only: no publish, share or lifecycle methods", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => response(draft()));
+  const gluon = new GluonDB({ apiKey: "gluon_test", baseUrl: "https://api.test" });
+  const dashboard = await gluon.dashboards.getDraft("dashboard-1");
+  for (const method of ["publish", "share", "archive", "restore", "delete"]) {
+    assert.equal(dashboard[method], undefined);
+    assert.equal(gluon.dashboards[method], undefined);
+  }
+});
+
+test("lists dashboards, optionally for one project", async (t) => {
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url) => {
+    calls.push(String(url));
+    return response({ data: { dashboards: [summary] }, meta: { api_version: "v1" } });
+  });
+  const gluon = new GluonDB({ apiKey: "gluon_test", baseUrl: "https://api.test" });
+  assert.deepEqual(await gluon.dashboards.list(), [summary]);
+  await gluon.dashboards.list("project 1");
+  assert.deepEqual(calls, [
+    "https://api.test/v1/dashboards",
+    "https://api.test/v1/dashboards?project_id=project%201",
+  ]);
+});
+
+test("a stale draft version surfaces the current version without retrying", async (t) => {
+  const replies = [
+    response(draft()),
+    response(
+      {
+        error: {
+          code: "DRAFT_CONFLICT",
+          message: "Draft changed; reload and review before retrying",
+          current_draft_version: 5,
+        },
+      },
+      412,
+    ),
+  ];
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    calls += 1;
+    return replies.shift();
+  });
+  const gluon = new GluonDB({ apiKey: "gluon_test", baseUrl: "https://api.test" });
+  const dashboard = await gluon.dashboards.getDraft("dashboard-1");
+  await assert.rejects(
+    () => dashboard.patchDocument([{ op: "replace", path: "/theme", value: "dark" }]),
+    (error) => {
+      assert.ok(error instanceof DashboardConflictError);
+      assert.equal(error.status, 412);
+      assert.equal(error.currentDraftVersion, 5);
+      assert.equal(error.currentHash, undefined);
+      return true;
+    },
+  );
+  assert.equal(calls, 2);
+  assert.equal(dashboard.draftVersion, 1);
 });
 
 test("conflicts expose the current hash without retrying", async (t) => {

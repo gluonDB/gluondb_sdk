@@ -10,6 +10,13 @@ pip install gluondb
 
 ## Dashboard authoring
 
+Give the API key **Dashboard drafter** permissions in GluonDB and explicitly
+select its dashboard projects and datasource/schema access. Selected projects
+permit reading saved SQL and text. Query execution remains separately scoped;
+removing query capability also disables previews. API keys cannot publish,
+share, archive, restore or delete dashboards: open `dashboard.editor_url` to
+review and publish as a signed-in user.
+
 ```python
 dashboard = gluon.dashboards.create(project_id=project_id, name="Revenue")
 
@@ -36,12 +43,20 @@ dashboard.blocks.add(
         "mapping": {"x": "day", "y": ["revenue"]},
     }
 )
-dashboard.publish()
+print("Open draft in GluonDB:", dashboard.editor_url)
 ```
 
-`AsyncGluonDB` exposes the same action set with awaitable methods. Draft
-conflicts raise `DashboardConflictError` with `current_hash`; the SDK never
-retries a mutation automatically. Generated `TypedDict` models provide editor
+`gluon.dashboards.list(project_id=None)` returns the dashboards the key can
+reach, and `gluon.dashboards.get_draft(id)` reopens one. `AsyncGluonDB` exposes
+the same action set with awaitable methods.
+
+The handle sends its current draft hash (`If-Match`) and draft version
+(`If-Draft-Version`) with every mutation and updates both only after success.
+Every document or operation edit advances the version. On a 412,
+`DashboardConflictError` carries `current_hash` or `current_draft_version`; the
+SDK never retries a mutation automatically. Call `dashboard.refresh()` and
+explicitly rebase your intended change. Saving an operation neither executes
+its SQL nor certifies access. Generated `TypedDict` models provide editor
 and type-checker guidance while validation and authorization remain
 server-owned.
 
