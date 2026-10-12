@@ -1,0 +1,49 @@
+{
+  "name": "@gluondb/mcp",
+  "version": "0.1.0",
+  "description": "Stdio-to-HTTP bridge for the GluonDB MCP server. Connect any stdio MCP client (Claude Desktop, etc.) to all your GluonDB projects and databases.",
+  "type": "module",
+  "bin": {
+    "gluondb-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "gluondb",
+    "mcp",
+    "model-context-protocol",
+    "sql",
+    "database",
+    "ai",
+    "agent"
+  ],
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://gluondb.com",
+  "bugs": {
+    "url": "https://github.com/gluonDB/gluondb_sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gluonDB/gluondb_sdk.git",
+    "directory": "mcp-bridge"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5"
+  }
+}
