@@ -3,6 +3,8 @@
 This repository publishes:
 - Python package: `gluondb` (PyPI)
 - TypeScript package: `@gluondb/sdk` (npm)
+- MCP stdio bridge: `@gluondb/mcp` (npm), released on its own tags; see
+  [MCP bridge](#mcp-bridge).
 
 ## Prerequisites
 
@@ -46,3 +48,20 @@ This repository publishes:
    - PyPI: `https://pypi.org/project/gluondb/`
    - npm: `https://www.npmjs.com/package/@gluondb/sdk`
 3. Install both packages in a clean environment and run a smoke query.
+
+## MCP bridge
+
+`mcp-bridge/` is versioned and released independently of the SDKs, so an SDK
+release never republishes an unchanged bridge.
+
+1. Update the version in `mcp-bridge/package.json` and `mcp-bridge/package-lock.json`.
+2. Add the change to `CHANGELOG.md`.
+3. Validate locally: `npm ci --prefix mcp-bridge && npm test --prefix mcp-bridge`.
+4. Commit and push to main.
+5. Tag and push: `git tag -a mcp-vX.Y.Z -m "MCP bridge vX.Y.Z"` then
+   `git push origin mcp-vX.Y.Z`.
+
+The tag triggers `.github/workflows/release-mcp.yml`, which builds, tests and
+runs `npm publish --access public` with the same `NPM_TOKEN` secret.
+`mcp-bridge/dist/` is build output and is not committed. Afterwards confirm
+`npx -y @gluondb/mcp` starts from a clean directory.

@@ -11,9 +11,13 @@ GluonDB is a unified data gateway -- connect your Postgres, MySQL, MSSQL, or oth
 | TypeScript / JavaScript | `@gluondb/sdk` | `npm install @gluondb/sdk` |
 | Python | `gluondb` | `pip install gluondb` |
 
+For MCP clients that only speak stdio (such as Claude Desktop), `@gluondb/mcp`
+bridges them to the GluonDB MCP endpoint: `npx -y @gluondb/mcp`.
+
 Package-specific docs:
 - TypeScript: [`typescript/README.md`](typescript/README.md)
 - Python: [`python/README.md`](python/README.md)
+- MCP bridge: [`mcp-bridge/README.md`](mcp-bridge/README.md)
 - Release guide: [`RELEASE.md`](RELEASE.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 

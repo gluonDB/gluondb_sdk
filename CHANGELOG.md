@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 - Representative staging examples for building a dashboard draft.
 - `dashboards.list()` and the draft's `editor_url` / `editorUrl`, where a
   signed-in user reviews and publishes.
+- `@gluondb/mcp`, a stdio-to-HTTP bridge that connects stdio-only MCP clients
+  to the GluonDB MCP endpoint, with its own CI job and `mcp-v*` release tags.
 
 ### Changed
 - Dashboard authoring is draft-only, matching the server: API keys cannot

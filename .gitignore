@@ -16,6 +16,7 @@ venv/
 test/.venv/
 
 # Build artifacts
+mcp-bridge/dist/
 python/dist/
 python/build/
 python/*.egg-info/
