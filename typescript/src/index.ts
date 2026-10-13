@@ -66,9 +66,7 @@ export type {
   DashboardDraftData,
   DashboardOperation,
   DashboardParameterValues,
-  DashboardPermission,
   DashboardPreviewResult,
-  DashboardPublishResult,
   DashboardSummary,
   JsonPatchOperation,
 } from "./resources/dashboards.js";

@@ -7,9 +7,14 @@ export declare class GluonAPIError extends Error {
     readonly error: Record<string, unknown>;
     constructor(code: string, message: string, status: number, error?: Record<string, unknown>);
 }
+/** A draft mutation was based on a content hash or draft version that is no longer current. */
 export declare class DashboardConflictError extends GluonAPIError {
-    readonly currentHash: string;
-    constructor(code: string, message: string, status: number, currentHash: string);
+    readonly currentHash?: string;
+    readonly currentDraftVersion?: number;
+    constructor(code: string, message: string, status: number, current: {
+        currentHash?: string;
+        currentDraftVersion?: number;
+    });
 }
 export declare class RevisionChangedError extends GluonAPIError {
     readonly currentRevision: number;

@@ -27,11 +27,24 @@ class GluonAPIError(Exception):
 
 
 class DashboardConflictError(GluonAPIError):
-    """A conditional draft mutation used an out-of-date content hash."""
+    """A draft mutation used an out-of-date content hash or draft version."""
 
-    def __init__(self, code: str, message: str, status: int, current_hash: str) -> None:
-        super().__init__(code, message, status, {"current_hash": current_hash})
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status: int,
+        current_hash: Optional[str] = None,
+        current_draft_version: Optional[int] = None,
+    ) -> None:
+        error: Dict[str, Any] = {}
+        if current_hash is not None:
+            error["current_hash"] = current_hash
+        if current_draft_version is not None:
+            error["current_draft_version"] = current_draft_version
+        super().__init__(code, message, status, error)
         self.current_hash = current_hash
+        self.current_draft_version = current_draft_version
 
 
 class RevisionChangedError(GluonAPIError):
@@ -62,10 +75,17 @@ def _api_error(response: httpx.Response) -> GluonAPIError:
         raw_message if isinstance(raw_message, str) else f"HTTP {response.status_code}"
     )
     current_hash = error.get("current_hash")
-    if code in {"DRAFT_CONFLICT", "CONTENT_CONFLICT"} and isinstance(
-        current_hash, str
+    if not isinstance(current_hash, str):
+        current_hash = None
+    current_draft_version = error.get("current_draft_version")
+    if not isinstance(current_draft_version, int):
+        current_draft_version = None
+    if code in {"DRAFT_CONFLICT", "CONTENT_CONFLICT"} and (
+        current_hash is not None or current_draft_version is not None
     ):
-        return DashboardConflictError(code, message, response.status_code, current_hash)
+        return DashboardConflictError(
+            code, message, response.status_code, current_hash, current_draft_version
+        )
     current_revision = error.get("current_revision")
     if code == "REVISION_CHANGED" and isinstance(current_revision, int):
         return RevisionChangedError(message, response.status_code, current_revision)

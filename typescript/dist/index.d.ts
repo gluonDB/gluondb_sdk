@@ -28,6 +28,6 @@ export { BoundDatasource } from "./bound-datasource.js";
 export { DashboardBlocks, DashboardDraft, DashboardOperations, DashboardsResource, } from "./resources/dashboards.js";
 export type { DatasourceRef, DatasourceByName } from "./bound-datasource.js";
 export type { GluonDBConfig, QueryResponse, QueryData, Column, QueryMeta, Project, Datasource, ApiResponse, ApiMeta, ApiErrorBody, } from "./types.js";
-export type { DashboardCreateInput, DashboardDraftData, DashboardOperation, DashboardParameterValues, DashboardPermission, DashboardPreviewResult, DashboardPublishResult, DashboardSummary, JsonPatchOperation, } from "./resources/dashboards.js";
+export type { DashboardCreateInput, DashboardDraftData, DashboardOperation, DashboardParameterValues, DashboardPreviewResult, DashboardSummary, JsonPatchOperation, } from "./resources/dashboards.js";
 export type { DashboardBlock, DashboardDocumentV1, DashboardOperationDeclaration, DashboardOperationPutBody, DashboardParameterDeclaration, OperationResultSchema, } from "./generated/index.js";
 //# sourceMappingURL=index.d.ts.map

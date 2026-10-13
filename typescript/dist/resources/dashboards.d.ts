@@ -13,8 +13,13 @@ export interface DashboardSummary {
     description: string | null;
     draft_revision_id: string | null;
     published_revision_id: string | null;
+    archived_at?: string | null;
     created_at: string;
     updated_at: string;
+    /** What this API key may do with the dashboard; the server still enforces it. */
+    can_edit?: boolean;
+    can_manage?: boolean;
+    allowed_actions?: string[];
 }
 export interface DashboardOperation extends DashboardOperationPutBody {
     key: string;
@@ -26,7 +31,9 @@ export interface DashboardDraftData {
     revision_id: string;
     document: DashboardDocumentV1;
     content_hash: string;
+    draft_version: number;
     operations: DashboardOperation[];
+    editor_url?: string;
 }
 export type JsonPatchOperation = {
     op: "add" | "replace" | "test";
@@ -62,28 +69,7 @@ export interface DashboardPreviewResult {
         truncation_reason?: string;
     };
 }
-export interface DashboardPublishResult {
-    dashboard_id: string;
-    published_revision: number;
-    published_revision_id: string;
-    published_content_hash: string;
-    published_at: string;
-    next_draft_revision: number;
-    next_draft_revision_id: string;
-    next_draft_hash: string;
-    reused_grant: boolean;
-    dry_run: {
-        executed: string[];
-        skipped: string[];
-    };
-}
-export interface DashboardPermission {
-    id: string;
-    email: string;
-    user_id: string | null;
-    role: "viewer" | "editor";
-    created_at: string;
-}
+type DraftState = Pick<DashboardDraftData, "content_hash" | "draft_version">;
 export declare class DashboardOperations {
     private readonly draft;
     constructor(draft: DashboardDraft);
@@ -96,6 +82,10 @@ export declare class DashboardBlocks {
     constructor(draft: DashboardDraft);
     add(block: DashboardBlock): Promise<DashboardDraft>;
 }
+/**
+ * A dashboard draft. API keys author drafts only: publishing, sharing and
+ * lifecycle actions happen in the GluonDB editor at `editorUrl`.
+ */
 export declare class DashboardDraft {
     private readonly client;
     readonly operations: DashboardOperations;
@@ -105,7 +95,9 @@ export declare class DashboardDraft {
     private revisionIdValue;
     private documentValue;
     private contentHashValue;
+    private draftVersionValue;
     private operationValues;
+    private editorUrlValue;
     constructor(client: GluonClient, data: DashboardDraftData);
     get id(): string;
     get summary(): DashboardSummary;
@@ -113,20 +105,28 @@ export declare class DashboardDraft {
     get revisionId(): string;
     get document(): DashboardDocumentV1;
     get contentHash(): string;
+    /** Advances on every document or operation edit, including other writers'. */
+    get draftVersion(): number;
+    /** Where a signed-in user reviews and publishes this draft. */
+    get editorUrl(): string | undefined;
     get operationList(): readonly DashboardOperation[];
+    /** Both preconditions the server requires on every draft mutation. */
+    preconditions(): Record<string, string>;
     request<T>(suffix: string, init?: RequestInit): Promise<T>;
-    applyOperation(operation: DashboardOperation, contentHash: string): void;
-    removeOperation(key: string, contentHash: string): void;
+    applyOperation(operation: DashboardOperation, state: DraftState): void;
+    removeOperation(key: string, state: DraftState): void;
     refresh(): Promise<DashboardDraft>;
     patchDocument(patch: JsonPatchOperation[]): Promise<DashboardDraft>;
-    publish(): Promise<DashboardPublishResult>;
-    share(email: string, role?: "viewer" | "editor"): Promise<DashboardPermission>;
+    private applyState;
     private applySnapshot;
 }
 export declare class DashboardsResource {
     private readonly client;
     constructor(client: GluonClient);
+    /** Dashboards in the projects this API key was granted, optionally one project. */
+    list(projectId?: string): Promise<DashboardSummary[]>;
     create(input: DashboardCreateInput): Promise<DashboardDraft>;
     getDraft(id: string): Promise<DashboardDraft>;
 }
+export {};
 //# sourceMappingURL=dashboards.d.ts.map

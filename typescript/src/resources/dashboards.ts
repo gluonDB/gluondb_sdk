@@ -20,8 +20,13 @@ export interface DashboardSummary {
   description: string | null;
   draft_revision_id: string | null;
   published_revision_id: string | null;
+  archived_at?: string | null;
   created_at: string;
   updated_at: string;
+  /** What this API key may do with the dashboard; the server still enforces it. */
+  can_edit?: boolean;
+  can_manage?: boolean;
+  allowed_actions?: string[];
 }
 
 export interface DashboardOperation extends DashboardOperationPutBody {
@@ -35,7 +40,9 @@ export interface DashboardDraftData {
   revision_id: string;
   document: DashboardDocumentV1;
   content_hash: string;
+  draft_version: number;
   operations: DashboardOperation[];
+  editor_url?: string;
 }
 
 export type JsonPatchOperation =
@@ -63,26 +70,7 @@ export interface DashboardPreviewResult {
   };
 }
 
-export interface DashboardPublishResult {
-  dashboard_id: string;
-  published_revision: number;
-  published_revision_id: string;
-  published_content_hash: string;
-  published_at: string;
-  next_draft_revision: number;
-  next_draft_revision_id: string;
-  next_draft_hash: string;
-  reused_grant: boolean;
-  dry_run: { executed: string[]; skipped: string[] };
-}
-
-export interface DashboardPermission {
-  id: string;
-  email: string;
-  user_id: string | null;
-  role: "viewer" | "editor";
-  created_at: string;
-}
+type DraftState = Pick<DashboardDraftData, "content_hash" | "draft_version">;
 
 interface PatchResult {
   dashboard_id: string;
@@ -90,24 +78,21 @@ interface PatchResult {
   revision_id: string;
   document: DashboardDocumentV1;
   content_hash: string;
+  draft_version: number;
 }
 
 interface OperationMutationResult {
   dashboard_id: string;
   content_hash: string;
+  draft_version: number;
   operation: DashboardOperation;
 }
 
 interface RemoveOperationResult {
   dashboard_id: string;
   content_hash: string;
+  draft_version: number;
   removed: string;
-}
-
-interface ShareResult {
-  dashboard_id: string;
-  content_hash: string;
-  permission: DashboardPermission;
 }
 
 function segment(value: string): string {
@@ -125,10 +110,10 @@ export class DashboardOperations {
       ApiResponse<OperationMutationResult>
     >(`/draft/operations/${segment(key)}`, {
       method: "PUT",
-      headers: { "If-Match": this.draft.contentHash },
+      headers: this.draft.preconditions(),
       body: JSON.stringify(operation),
     });
-    this.draft.applyOperation(response.data.operation, response.data.content_hash);
+    this.draft.applyOperation(response.data.operation, response.data);
     return response.data.operation;
   }
 
@@ -137,10 +122,10 @@ export class DashboardOperations {
       `/draft/operations/${segment(key)}`,
       {
         method: "DELETE",
-        headers: { "If-Match": this.draft.contentHash },
+        headers: this.draft.preconditions(),
       },
     );
-    this.draft.removeOperation(response.data.removed, response.data.content_hash);
+    this.draft.removeOperation(response.data.removed, response.data);
   }
 
   async preview(
@@ -167,6 +152,10 @@ export class DashboardBlocks {
   }
 }
 
+/**
+ * A dashboard draft. API keys author drafts only: publishing, sharing and
+ * lifecycle actions happen in the GluonDB editor at `editorUrl`.
+ */
 export class DashboardDraft {
   public readonly operations: DashboardOperations;
   public readonly blocks: DashboardBlocks;
@@ -176,7 +165,9 @@ export class DashboardDraft {
   private revisionIdValue: string;
   private documentValue: DashboardDocumentV1;
   private contentHashValue: string;
+  private draftVersionValue: number;
   private operationValues: DashboardOperation[];
+  private editorUrlValue: string | undefined;
 
   constructor(
     private readonly client: GluonClient,
@@ -187,7 +178,9 @@ export class DashboardDraft {
     this.revisionIdValue = data.revision_id;
     this.documentValue = data.document;
     this.contentHashValue = data.content_hash;
+    this.draftVersionValue = data.draft_version;
     this.operationValues = data.operations;
+    this.editorUrlValue = data.editor_url;
     this.operations = new DashboardOperations(this);
     this.blocks = new DashboardBlocks(this);
   }
@@ -216,27 +209,45 @@ export class DashboardDraft {
     return this.contentHashValue;
   }
 
+  /** Advances on every document or operation edit, including other writers'. */
+  get draftVersion(): number {
+    return this.draftVersionValue;
+  }
+
+  /** Where a signed-in user reviews and publishes this draft. */
+  get editorUrl(): string | undefined {
+    return this.editorUrlValue;
+  }
+
   get operationList(): readonly DashboardOperation[] {
     return this.operationValues;
+  }
+
+  /** Both preconditions the server requires on every draft mutation. */
+  preconditions(): Record<string, string> {
+    return {
+      "If-Match": this.contentHashValue,
+      "If-Draft-Version": String(this.draftVersionValue),
+    };
   }
 
   request<T>(suffix: string, init?: RequestInit): Promise<T> {
     return this.client.request<T>(`/dashboards/${segment(this.id)}${suffix}`, init);
   }
 
-  applyOperation(operation: DashboardOperation, contentHash: string): void {
+  applyOperation(operation: DashboardOperation, state: DraftState): void {
     this.operationValues = [
       ...this.operationValues.filter((candidate) => candidate.key !== operation.key),
       operation,
     ];
-    this.contentHashValue = contentHash;
+    this.applyState(state);
   }
 
-  removeOperation(key: string, contentHash: string): void {
+  removeOperation(key: string, state: DraftState): void {
     this.operationValues = this.operationValues.filter(
       (operation) => operation.key !== key,
     );
-    this.contentHashValue = contentHash;
+    this.applyState(state);
   }
 
   async refresh(): Promise<DashboardDraft> {
@@ -250,45 +261,19 @@ export class DashboardDraft {
   async patchDocument(patch: JsonPatchOperation[]): Promise<DashboardDraft> {
     const response = await this.request<ApiResponse<PatchResult>>("/draft", {
       method: "PATCH",
-      headers: { "If-Match": this.contentHash },
+      headers: this.preconditions(),
       body: JSON.stringify({ patch }),
     });
     this.revisionValue = response.data.revision;
     this.revisionIdValue = response.data.revision_id;
     this.documentValue = response.data.document;
-    this.contentHashValue = response.data.content_hash;
+    this.applyState(response.data);
     return this;
   }
 
-  async publish(): Promise<DashboardPublishResult> {
-    const response = await this.request<ApiResponse<DashboardPublishResult>>(
-      "/publish",
-      {
-        method: "POST",
-        headers: { "If-Match": this.contentHash },
-      },
-    );
-    this.revisionValue = response.data.next_draft_revision;
-    this.revisionIdValue = response.data.next_draft_revision_id;
-    this.contentHashValue = response.data.next_draft_hash;
-    this.summaryValue = {
-      ...this.summaryValue,
-      published_revision_id: response.data.published_revision_id,
-      draft_revision_id: response.data.next_draft_revision_id,
-    };
-    return response.data;
-  }
-
-  async share(
-    email: string,
-    role: "viewer" | "editor" = "viewer",
-  ): Promise<DashboardPermission> {
-    const response = await this.request<ApiResponse<ShareResult>>("/permissions", {
-      method: "POST",
-      body: JSON.stringify({ email, role }),
-    });
-    this.contentHashValue = response.data.content_hash;
-    return response.data.permission;
+  private applyState(state: DraftState): void {
+    this.contentHashValue = state.content_hash;
+    this.draftVersionValue = state.draft_version;
   }
 
   private applySnapshot(data: DashboardDraftData): void {
@@ -297,12 +282,23 @@ export class DashboardDraft {
     this.revisionIdValue = data.revision_id;
     this.documentValue = data.document;
     this.contentHashValue = data.content_hash;
+    this.draftVersionValue = data.draft_version;
     this.operationValues = data.operations;
+    this.editorUrlValue = data.editor_url;
   }
 }
 
 export class DashboardsResource {
   constructor(private readonly client: GluonClient) {}
+
+  /** Dashboards in the projects this API key was granted, optionally one project. */
+  async list(projectId?: string): Promise<DashboardSummary[]> {
+    const query = projectId ? `?project_id=${segment(projectId)}` : "";
+    const response = await this.client.request<
+      ApiResponse<{ dashboards: DashboardSummary[] }>
+    >(`/dashboards${query}`);
+    return response.data.dashboards;
+  }
 
   async create(input: DashboardCreateInput): Promise<DashboardDraft> {
     const response = await this.client.request<ApiResponse<DashboardDraftData>>(

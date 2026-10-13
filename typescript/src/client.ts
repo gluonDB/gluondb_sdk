@@ -27,13 +27,26 @@ export class GluonAPIError extends Error {
   }
 }
 
+/** A draft mutation was based on a content hash or draft version that is no longer current. */
 export class DashboardConflictError extends GluonAPIError {
-  public readonly currentHash: string;
+  public readonly currentHash?: string;
+  public readonly currentDraftVersion?: number;
 
-  constructor(code: string, message: string, status: number, currentHash: string) {
-    super(code, message, status, { current_hash: currentHash });
+  constructor(
+    code: string,
+    message: string,
+    status: number,
+    current: { currentHash?: string; currentDraftVersion?: number },
+  ) {
+    super(code, message, status, {
+      ...(current.currentHash !== undefined && { current_hash: current.currentHash }),
+      ...(current.currentDraftVersion !== undefined && {
+        current_draft_version: current.currentDraftVersion,
+      }),
+    });
     this.name = "DashboardConflictError";
-    this.currentHash = currentHash;
+    this.currentHash = current.currentHash;
+    this.currentDraftVersion = current.currentDraftVersion;
   }
 }
 
@@ -55,11 +68,20 @@ function apiError(body: ApiErrorResponse | undefined, status: number): GluonAPIE
   const message =
     typeof error.message === "string" ? error.message : `HTTP ${status}`;
 
+  const currentHash =
+    typeof error.current_hash === "string" ? error.current_hash : undefined;
+  const currentDraftVersion =
+    typeof error.current_draft_version === "number"
+      ? error.current_draft_version
+      : undefined;
   if (
     (code === "DRAFT_CONFLICT" || code === "CONTENT_CONFLICT") &&
-    typeof error.current_hash === "string"
+    (currentHash !== undefined || currentDraftVersion !== undefined)
   ) {
-    return new DashboardConflictError(code, message, status, error.current_hash);
+    return new DashboardConflictError(code, message, status, {
+      currentHash,
+      currentDraftVersion,
+    });
   }
   if (
     code === "REVISION_CHANGED" &&

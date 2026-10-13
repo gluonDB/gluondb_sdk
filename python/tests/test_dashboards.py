@@ -42,8 +42,14 @@ SUMMARY = {
     "description": None,
     "draft_revision_id": "revision-1",
     "published_revision_id": None,
+    "archived_at": None,
     "created_at": "2026-09-02T00:00:00Z",
     "updated_at": "2026-09-02T00:00:00Z",
+    "can_edit": True,
+    "can_manage": False,
+    "allowed_actions": ["get_draft", "patch_document", "put_operation"],
+    # A field this SDK version does not know about must not break parsing.
+    "added_by_a_later_server": True,
 }
 
 
@@ -51,20 +57,30 @@ def envelope(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"data": data, "meta": {"api_version": "v1"}}
 
 
-def draft(content_hash: str = "sha256:one") -> Dict[str, Any]:
+def draft(content_hash: str = "sha256:one", draft_version: int = 1) -> Dict[str, Any]:
     return envelope(
         {
             "dashboard": SUMMARY,
+            "editor_url": "https://app.test/dashboards/dashboard-1/edit",
             "revision": 1,
             "revision_id": "revision-1",
             "document": DOCUMENT,
             "content_hash": content_hash,
+            "draft_version": draft_version,
             "operations": [],
         }
     )
 
 
-def test_sync_builder_carries_and_advances_hash() -> None:
+def sync_client(handler: Any) -> GluonDB:
+    gluon = GluonDB(api_key="gluon_test", base_url="https://api.test")
+    gluon._client._client = httpx.Client(
+        base_url="https://api.test/v1", transport=httpx.MockTransport(handler)
+    )
+    return gluon
+
+
+def test_sync_builder_carries_and_advances_hash_and_version() -> None:
     requests: List[httpx.Request] = []
     replies = [
         httpx.Response(201, json=draft()),
@@ -74,6 +90,7 @@ def test_sync_builder_carries_and_advances_hash() -> None:
                 {
                     "dashboard_id": "dashboard-1",
                     "content_hash": "sha256:one",
+                    "draft_version": 2,
                     "operation": {**OPERATION, "query_hash": "sha256:query"},
                 }
             ),
@@ -87,6 +104,7 @@ def test_sync_builder_carries_and_advances_hash() -> None:
                     "revision_id": "revision-1",
                     "document": {**DOCUMENT, "theme": "dark"},
                     "content_hash": "sha256:two",
+                    "draft_version": 3,
                 }
             ),
         ),
@@ -95,15 +113,9 @@ def test_sync_builder_carries_and_advances_hash() -> None:
             json=envelope(
                 {
                     "dashboard_id": "dashboard-1",
-                    "published_revision": 1,
-                    "published_revision_id": "revision-1",
-                    "published_content_hash": "sha256:two",
-                    "published_at": "2026-09-02T01:00:00Z",
-                    "next_draft_revision": 2,
-                    "next_draft_revision_id": "revision-2",
-                    "next_draft_hash": "sha256:three",
-                    "reused_grant": False,
-                    "dry_run": {"executed": [], "skipped": []},
+                    "content_hash": "sha256:two",
+                    "draft_version": 4,
+                    "removed": OPERATION["key"],
                 }
             ),
         ),
@@ -113,28 +125,90 @@ def test_sync_builder_carries_and_advances_hash() -> None:
         requests.append(request)
         return replies.pop(0)
 
-    gluon = GluonDB(api_key="gluon_test", base_url="https://api.test")
-    gluon._client._client = httpx.Client(
-        base_url="https://api.test/v1", transport=httpx.MockTransport(handler)
-    )
+    gluon = sync_client(handler)
     dashboard = gluon.dashboards.create(project_id="project-1", name="Revenue")
     assert dashboard.content_hash == "sha256:one"
+    assert dashboard.draft_version == 1
+    assert dashboard.editor_url == "https://app.test/dashboards/dashboard-1/edit"
+    assert dashboard.summary.allowed_actions[0] == "get_draft"
 
     body = {key: value for key, value in OPERATION.items() if key != "key"}
     dashboard.operations.put(OPERATION["key"], cast(DashboardOperationPutBody, body))
     assert requests[1].headers["if-match"] == "sha256:one"
+    assert requests[1].headers["if-draft-version"] == "1"
     assert dashboard.operation_list[0].key == OPERATION["key"]
+    assert dashboard.draft_version == 2
 
     dashboard.patch_document(
         [{"op": "replace", "path": "/theme", "value": "dark"}]
     )
     assert requests[2].headers["if-match"] == "sha256:one"
+    assert requests[2].headers["if-draft-version"] == "2"
     assert dashboard.content_hash == "sha256:two"
+    assert dashboard.draft_version == 3
 
-    dashboard.publish()
+    dashboard.operations.remove(OPERATION["key"])
+    assert requests[3].method == "DELETE"
     assert requests[3].headers["if-match"] == "sha256:two"
-    assert dashboard.content_hash == "sha256:three"
-    assert dashboard.revision == 2
+    assert requests[3].headers["if-draft-version"] == "3"
+    assert dashboard.operation_list == ()
+    assert dashboard.draft_version == 4
+
+
+def test_api_keys_author_drafts_only() -> None:
+    gluon = sync_client(lambda request: httpx.Response(200, json=draft()))
+    dashboard = gluon.dashboards.get_draft("dashboard-1")
+    for method in ("publish", "share", "archive", "restore", "delete"):
+        assert not hasattr(dashboard, method)
+        assert not hasattr(gluon.dashboards, method)
+
+
+def test_lists_dashboards_optionally_for_one_project() -> None:
+    requests: List[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=envelope({"dashboards": [SUMMARY]}))
+
+    gluon = sync_client(handler)
+    assert [item.id for item in gluon.dashboards.list()] == ["dashboard-1"]
+    gluon.dashboards.list("project 1")
+    assert [str(request.url) for request in requests] == [
+        "https://api.test/v1/dashboards",
+        "https://api.test/v1/dashboards?project_id=project%201",
+    ]
+
+
+def test_stale_draft_version_surfaces_current_version_without_retry() -> None:
+    replies = [
+        httpx.Response(200, json=draft()),
+        httpx.Response(
+            412,
+            json={
+                "error": {
+                    "code": "DRAFT_CONFLICT",
+                    "message": "Draft changed; reload and review before retrying",
+                    "current_draft_version": 5,
+                }
+            },
+        ),
+    ]
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return replies.pop(0)
+
+    gluon = sync_client(handler)
+    dashboard = gluon.dashboards.get_draft("dashboard-1")
+    with pytest.raises(DashboardConflictError) as raised:
+        dashboard.patch_document([{"op": "replace", "path": "/theme", "value": "dark"}])
+    assert raised.value.status == 412
+    assert raised.value.current_draft_version == 5
+    assert raised.value.current_hash is None
+    assert calls == 2
+    assert dashboard.draft_version == 1
 
 
 @pytest.mark.parametrize(
@@ -199,16 +273,12 @@ def test_async_builder_uses_the_same_contract() -> None:
                 {
                     "dashboard_id": "dashboard-1",
                     "content_hash": "sha256:one",
-                    "permission": {
-                        "id": "permission-1",
-                        "email": "viewer@example.com",
-                        "user_id": None,
-                        "role": "viewer",
-                        "created_at": "2026-09-02T00:00:00Z",
-                    },
+                    "draft_version": 2,
+                    "removed": "revenue_by_day",
                 }
             ),
         ),
+        httpx.Response(200, json=envelope({"dashboards": [SUMMARY]})),
     ]
 
     async def run() -> None:
@@ -223,9 +293,13 @@ def test_async_builder_uses_the_same_contract() -> None:
         dashboard = await gluon.dashboards.create(
             project_id="project-1", name="Revenue"
         )
-        permission = await dashboard.share("viewer@example.com")
-        assert permission.role == "viewer"
-        assert requests[1].url.path.endswith("/dashboards/dashboard-1/permissions")
+        await dashboard.operations.remove("revenue_by_day")
+        assert requests[1].method == "DELETE"
+        assert requests[1].headers["if-match"] == "sha256:one"
+        assert requests[1].headers["if-draft-version"] == "1"
+        assert dashboard.draft_version == 2
+        assert not hasattr(dashboard, "publish")
+        assert [item.id for item in await gluon.dashboards.list()] == ["dashboard-1"]
         await gluon._client._client.aclose()
 
     asyncio.run(run())

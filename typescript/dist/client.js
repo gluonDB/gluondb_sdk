@@ -17,12 +17,20 @@ export class GluonAPIError extends Error {
             typeof error.retry_after_ms === "number" ? error.retry_after_ms : undefined;
     }
 }
+/** A draft mutation was based on a content hash or draft version that is no longer current. */
 export class DashboardConflictError extends GluonAPIError {
     currentHash;
-    constructor(code, message, status, currentHash) {
-        super(code, message, status, { current_hash: currentHash });
+    currentDraftVersion;
+    constructor(code, message, status, current) {
+        super(code, message, status, {
+            ...(current.currentHash !== undefined && { current_hash: current.currentHash }),
+            ...(current.currentDraftVersion !== undefined && {
+                current_draft_version: current.currentDraftVersion,
+            }),
+        });
         this.name = "DashboardConflictError";
-        this.currentHash = currentHash;
+        this.currentHash = current.currentHash;
+        this.currentDraftVersion = current.currentDraftVersion;
     }
 }
 export class RevisionChangedError extends GluonAPIError {
@@ -39,9 +47,16 @@ function apiError(body, status) {
     const error = body?.error ?? {};
     const code = typeof error.code === "string" ? error.code : "UNKNOWN";
     const message = typeof error.message === "string" ? error.message : `HTTP ${status}`;
+    const currentHash = typeof error.current_hash === "string" ? error.current_hash : undefined;
+    const currentDraftVersion = typeof error.current_draft_version === "number"
+        ? error.current_draft_version
+        : undefined;
     if ((code === "DRAFT_CONFLICT" || code === "CONTENT_CONFLICT") &&
-        typeof error.current_hash === "string") {
-        return new DashboardConflictError(code, message, status, error.current_hash);
+        (currentHash !== undefined || currentDraftVersion !== undefined)) {
+        return new DashboardConflictError(code, message, status, {
+            currentHash,
+            currentDraftVersion,
+        });
     }
     if (code === "REVISION_CHANGED" &&
         typeof error.current_revision === "number") {

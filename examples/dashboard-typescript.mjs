@@ -35,13 +35,14 @@ await dashboard.patchDocument([
 ]);
 for (const block of document.blocks) await dashboard.blocks.add(block);
 
-const published = await dashboard.publish();
+// API keys author drafts only; a signed-in user publishes from the editor.
 console.log(
   JSON.stringify(
     {
       dashboard_id: dashboard.id,
-      published_revision: published.published_revision,
-      next_draft_hash: dashboard.contentHash,
+      draft_version: dashboard.draftVersion,
+      draft_hash: dashboard.contentHash,
+      editor_url: dashboard.editorUrl,
     },
     null,
     2,
